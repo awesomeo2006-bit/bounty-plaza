@@ -1,28 +1,46 @@
 import bcrypt
+from pymongo import MongoClient
 
-def validate_input(username, password):
-    if not isinstance(username, str) or not isinstance(password, str):
-        raise ValueError("Username and password must be strings")
+# Connect to MongoDB
+client = MongoClient('mongodb://localhost:27017/')
+db = client['your_database']
+users = db['users']
 
+# Function to hash password
 def hash_password(password):
     salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
-    return hashed_password
+    return bcrypt.hashpw(password.encode('utf-8'), salt)
 
-def sanitize_query(query):
-    valid_fields = {"username", "password"}
-    valid_operators = {"$eq", "$ne"}
-    for key, value in query.items():
-        if key not in valid_fields or (isinstance(value, dict) and "$ne" in value and list(value.keys())[0] not in valid_fields):
-            raise ValueError("Invalid query structure")
+# Function to register a new user
+def register_user(username, password):
+    if not username or not password:
+        raise ValueError("Username and password cannot be empty")
+    if not isinstance(username, str) or not isinstance(password, str):
+        raise ValueError("Username and password must be strings")
+    hashed_password = hash_password(password)
+    user = {
+        "username": username,
+        "password": hashed_password
+    }
+    users.insert_one(user)
 
-def authenticate(username, password):
-    validate_input(username, password)
-    user = get_user_from_db(username)
+# Function to authenticate a user
+def authenticate_user(username, password):
+    if not username or not password:
+        raise ValueError("Username and password cannot be empty")
+    if not isinstance(username, str) or not isinstance(password, str):
+        raise ValueError("Username and password must be strings")
+    user = users.find_one({"username": username})
     if user and bcrypt.checkpw(password.encode('utf-8'), user['password']):
-        return user
-    return None
+        return True
+    return False
 
-def get_user_from_db(username):
-    # Mock function to simulate database retrieval
-    return {"username": username, "password": hash_password("securepassword")}
+# Example usage
+try:
+    register_user("admin", "password123")
+    if authenticate_user("admin", "password123"):
+        print("Authentication successful")
+    else:
+        print("Authentication failed")
+except ValueError as e:
+    print(e)
