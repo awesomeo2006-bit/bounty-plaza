@@ -17,19 +17,16 @@ def verify_password(stored_password, provided_password):
 
 # Example usage
 username = "admin"
-password = "admin123"
+password = "secure_password123"
 
 # Hash the password before storing
 hashed_password = hash_password(password)
 users.insert_one({"username": username, "password": hashed_password})
 
-# Authenticate user
-def authenticate(username, password):
-    user = users.find_one({"username": username})
-    if user and verify_password(user['password'], password):
-        return True
-    return False
-
-# Test the authentication
-print(authenticate(username, password))  # Should return True
-print(authenticate(username, "wrong_password"))  # Should return False
+# Verify the password during login
+login_password = "secure_password123"
+user = users.find_one({"username": username})
+if user and verify_password(user['password'], login_password):
+    print("Login successful")
+else:
+    print("Login failed")
