@@ -1,32 +1,23 @@
-import bcrypt
 from pymongo import MongoClient
+from bcrypt import hashpw, gensalt
+from bson.objectid import ObjectId
 
-# Connect to MongoDB
-client = MongoClient('mongodb://localhost:27017/')
-db = client['your_database']
-users = db['users']
+# Example function to authenticate a user
+def authenticate_user(username, password):
+    client = MongoClient('mongodb://localhost:27017/')
+    db = client['your_database']
+    users = db['users']
 
-# Function to hash password
-def hash_password(password):
-    salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode('utf-8'), salt)
+    # Sanitize and validate inputs
+    if not isinstance(username, str) or not isinstance(password, str):
+        return False
 
-# Function to verify password
-def verify_password(stored_password, provided_password):
-    return bcrypt.checkpw(provided_password.encode('utf-8'), stored_password)
+    # Fetch user document
+    user = users.find_one({'username': username})
 
-# Example usage
-username = "admin"
-password = "secure_password123"
+    if user:
+        # Compare hashed password
+        if hashpw(password.encode('utf-8'), user['password'].encode('utf-8')) == user['password'].encode('utf-8'):
+            return True
 
-# Hash the password before storing
-hashed_password = hash_password(password)
-users.insert_one({"username": username, "password": hashed_password})
-
-# Verify the password during login
-login_password = "secure_password123"
-user = users.find_one({"username": username})
-if user and verify_password(user['password'], login_password):
-    print("Login successful")
-else:
-    print("Login failed")
+    return False
