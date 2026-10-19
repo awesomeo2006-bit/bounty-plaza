@@ -13,8 +13,6 @@ def hash_password(password):
 
 # Function to register a new user
 def register_user(username, password):
-    if not username or not password:
-        raise ValueError("Username and password cannot be empty")
     if not isinstance(username, str) or not isinstance(password, str):
         raise ValueError("Username and password must be strings")
     hashed_password = hash_password(password)
@@ -26,8 +24,6 @@ def register_user(username, password):
 
 # Function to authenticate a user
 def authenticate_user(username, password):
-    if not username or not password:
-        raise ValueError("Username and password cannot be empty")
     if not isinstance(username, str) or not isinstance(password, str):
         raise ValueError("Username and password must be strings")
     user = users.find_one({"username": username})
@@ -36,11 +32,6 @@ def authenticate_user(username, password):
     return False
 
 # Example usage
-try:
-    register_user("admin", "password123")
-    if authenticate_user("admin", "password123"):
-        print("Authentication successful")
-    else:
-        print("Authentication failed")
-except ValueError as e:
-    print(e)
+register_user("admin", "password123")
+print(authenticate_user("admin", "password123"))  # Should return True
+print(authenticate_user("admin", "wrongpassword"))  # Should return False
