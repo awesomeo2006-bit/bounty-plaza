@@ -1,28 +1,25 @@
-import bcrypt
 from pymongo import MongoClient
+from bcrypt import hashpw, gensalt
 
-def validate_input(username, password):
-    if not isinstance(username, str) or not isinstance(password, str):
-        raise ValueError("Username and password must be strings")
-    return username, password
-
-def hash_password(password):
-    salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
-    return hashed_password
-
-def authenticate(username, password):
-    username, password = validate_input(username, password)
+# Example function to authenticate user
+def authenticate_user(username, password):
     client = MongoClient('mongodb://localhost:27017/')
     db = client['your_database']
-    collection = db['users']
-    user = collection.find_one({"username": username, "password": password})
-    return user
+    users = db['users']
 
-# Example usage
-if __name__ == "__main__":
-    username = "admin"
-    password = "secure_password123"
-    hashed_password = hash_password(password)
-    user = authenticate(username, hashed_password)
-    print(user)
+    # Validate input
+    if not isinstance(username, str) or not isinstance(password, str):
+        return False
+
+    # Fetch user document
+    user_doc = users.find_one({'username': username})
+
+    if not user_doc:
+        return False
+
+    # Verify password
+    stored_password = user_doc['password']
+    if hashpw(password.encode('utf-8'), stored_password) == stored_password:
+        return True
+
+    return False
