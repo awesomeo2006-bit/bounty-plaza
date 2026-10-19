@@ -1,24 +1,33 @@
 import bcrypt
 from pymongo import MongoClient
 
+# Connect to MongoDB
 client = MongoClient('mongodb://localhost:27017/')
 db = client['your_database']
-collection = db['users']
+users = db['users']
 
-def validate_input(username, password):
-    if not isinstance(username, str) or not isinstance(password, str):
-        raise ValueError("Username and password must be strings")
-    if not password.strip():  # Ensure password is not just whitespace
-        raise ValueError("Password cannot be empty")
-
+# Function to hash password
 def hash_password(password):
-    salt = bcrypt.gensalt(rounds=12)
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
-    return hashed_password
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode('utf-8'), salt)
 
-def authenticate(username, password):
-    validate_input(username, password)
+# Function to register a new user
+def register_user(username, password):
     hashed_password = hash_password(password)
-    query = {"username": username, "password": hashed_password}
-    user = collection.find_one(query)
-    return user
+    user = {
+        'username': username,
+        'password': hashed_password
+    }
+    users.insert_one(user)
+
+# Function to authenticate a user
+def authenticate_user(username, password):
+    user = users.find_one({'username': username})
+    if user and bcrypt.checkpw(password.encode('utf-8'), user['password']):
+        return True
+    return False
+
+# Example usage
+register_user('admin', 'password123')
+print(authenticate_user('admin', 'password123'))  # Should return True
+print(authenticate_user('admin', 'wrongpassword'))  # Should return False
