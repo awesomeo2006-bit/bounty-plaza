@@ -4,26 +4,27 @@ from pymongo import MongoClient
 # Connect to MongoDB
 client = MongoClient('mongodb://localhost:27017/')
 db = client['your_database']
-users = db['users']
+users_collection = db['users']
 
 def hash_password(password):
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-
-def add_user(username, password):
-    hashed_password = hash_password(password)
-    user = {
-        'username': username,
-        'password': hashed_password
-    }
-    users.insert_one(user)
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode('utf-8'), salt)
 
 def authenticate_user(username, password):
-    user = users.find_one({'username': username})
+    if not isinstance(username, str) or not isinstance(password, str):
+        raise ValueError("Invalid input types")
+    
+    user = users_collection.find_one({"username": username})
     if user and bcrypt.checkpw(password.encode('utf-8'), user['password']):
         return True
     return False
 
 # Example usage
-add_user('admin', 'password123')
-print(authenticate_user('admin', 'password123'))  # Should return True
-print(authenticate_user('admin', 'wrongpassword'))  # Should return False
+username = "admin"
+password = "admin123"
+hashed_password = hash_password(password)
+users_collection.insert_one({"username": username, "password": hashed_password})
+
+# Authenticate
+is_authenticated = authenticate_user(username, password)
+print("Authentication successful:", is_authenticated)
